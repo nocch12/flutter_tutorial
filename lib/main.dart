@@ -1,106 +1,133 @@
 import 'package:flutter/material.dart';
-import 'package:english_words/english_words.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  runApp(
+    FriendlyChatApp(),
+  );
+}
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+String _name = 'Ohno';
+
+class FriendlyChatApp extends StatelessWidget {
+  const FriendlyChatApp({
+    Key key,
+  }) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'startup Name generator',
-      theme: ThemeData(
-        primaryColor: Colors.lightGreenAccent,
-      ),
-      home: RandomWords(),
+      title: 'FriendlyChat',
+      home: ChatScreen(),
     );
   }
 }
 
-class RandomWordsState extends State<RandomWords> {
-  final _suggestions = <WordPair>[];
-  final _saved = Set<WordPair>();
-  final _biggerFont = const TextStyle(fontSize: 18.0);
+class ChatMessage extends StatelessWidget {
+  ChatMessage({this.text});
+  final String text;
 
-  void _pushSaved() {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (BuildContext context) {
-        final tiles = _saved.map((WordPair pair) {
-          return ListTile(
-            title: Text(
-              pair.asPascalCase,
-              style: _biggerFont,
-            ),
-          );
-        });
-        final divided = ListTile.divideTiles(
-          context: context,
-          tiles: tiles,
-        ).toList();
-
-        return Scaffold(
-          appBar: AppBar(
-            title: Text('Saved Suggestions'),
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(right: 16.0),
+            child: CircleAvatar(child: Text(_name[0])),
           ),
-          body: ListView(children: divided),
-        );
-      },
-    ));
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _name,
+                style: Theme.of(context).textTheme.headline4,
+              ),
+              Container(
+                margin: EdgeInsets.only(top: 5.0),
+                child: Text(text),
+              )
+            ],
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class ChatScreen extends StatefulWidget {
+  @override
+  _ChatScreenState createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  final List<ChatMessage> _messages = [];
+  final _textController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+
+  void _handleSubmitted(String text) {
+    _textController.clear();
+    ChatMessage message = ChatMessage(
+      text: text,
+    );
+    setState(() {
+      _messages.insert(0, message);
+    });
+    _focusNode.requestFocus();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('startup Name Generator'),
-        actions: [
-          IconButton(icon: Icon(Icons.list), onPressed: _pushSaved),
+        title: Text('FriendlyChat'),
+      ),
+      body: Column(
+        children: [
+          Flexible(
+            child: ListView.builder(
+              padding: EdgeInsets.all(8.0),
+              reverse: true,
+              itemBuilder: (_, int index) => _messages[index],
+              itemCount: _messages.length,
+            ),
+          ),
+          Divider(height: 1.0),
+          Container(
+            decoration: BoxDecoration(color: Theme.of(context).cardColor),
+            child: _buildTextComposer(),
+          ),
         ],
       ),
-      body: _buildSuggestions(),
     );
   }
 
-  Widget _buildSuggestions() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemBuilder: (context, i) {
-        if (i.isOdd) return Divider();
-
-        final index = i ~/ 2;
-        if (index >= _suggestions.length) {
-          _suggestions.addAll(generateWordPairs().take(10));
-        }
-        return _buildRow(_suggestions[index]);
-      },
+  Widget _buildTextComposer() {
+    return IconTheme(
+      data: IconThemeData(color: Theme.of(context).accentColor),
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 8.0),
+        child: Row(
+          children: [
+            Flexible(
+              child: TextField(
+                controller: _textController,
+                onSubmitted: _handleSubmitted,
+                decoration:
+                    InputDecoration.collapsed(hintText: 'Send a message'),
+                focusNode: _focusNode,
+              ),
+            ),
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 4.0),
+              child: IconButton(
+                icon: Icon(Icons.send),
+                onPressed: () => _handleSubmitted(_textController.text),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
-
-  Widget _buildRow(WordPair pair) {
-    final alreadySaved = _saved.contains(pair);
-
-    return ListTile(
-        title: Text(
-          pair.asPascalCase,
-          style: _biggerFont,
-        ),
-        trailing: Icon(
-          alreadySaved ? Icons.favorite : Icons.favorite_border,
-          color: alreadySaved ? Colors.red : null,
-        ),
-        onTap: () {
-          setState(() {
-            if (alreadySaved) {
-              _saved.remove(pair);
-            } else {
-              _saved.add(pair);
-            }
-          });
-        });
-  }
-}
-
-class RandomWords extends StatefulWidget {
-  @override
-  RandomWordsState createState() => new RandomWordsState();
 }
